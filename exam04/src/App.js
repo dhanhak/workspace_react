@@ -1,5 +1,8 @@
-import { BrowserRouter, Link, Outlet, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Link, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
 import './App.css';
+import { createContext, useContext, useState } from 'react';
+
+const MessageContext = createContext();
 
 const Index = () => {
   return (
@@ -29,6 +32,17 @@ const Index = () => {
 }
 
 const Input = () => {
+
+  const { messages, setMessages } = useContext(MessageContext);
+
+  const navi = useNavigate();
+
+  const [message, setMessage] = useState({
+    seq: 0,
+    writer: "",
+    message: ""
+  });
+
   return (
     <div className='container'>
       <table border={1} align='center'>
@@ -40,17 +54,40 @@ const Input = () => {
         <tbody>
           <tr>
             <td>
-              <input type='text' placeholder='Input wirter' />
+              <input type='number' onChange={e => {
+                setMessage(prev => ({
+                  ...prev,
+                  'seq': e.target.value
+                }))
+              }} placeholder='Input seq' />
             </td>
           </tr>
           <tr>
             <td>
-              <input type='text' placeholder='Input message' />
+              <input type='text' onChange={e => {
+                setMessage(prev => ({
+                  ...prev,
+                  'writer': e.target.value
+                }))
+              }} placeholder='Input wirter' />
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <input type='text' onChange={e => {
+                setMessage(prev => ({
+                  ...prev,
+                  'message': e.target.value
+                }))
+              }} placeholder='Input message' />
             </td>
           </tr>
           <tr>
             <td style={{ display: 'flex', justifyContent: 'space-evenly' }}>
-              <button onClick={() => { console.log("Writer Click!") }}>write</button>
+              <button onClick={() => {
+                setMessages(prev => [...prev, message]);
+                navi("/output");
+              }}>write</button>
               <Link to={"/"}><button>back</button></Link>
             </td>
           </tr>
@@ -62,11 +99,7 @@ const Input = () => {
 
 const Output = () => {
 
-  const messages = [
-    { seq: 1, writer: "Jane", message: "React Router" },
-    { seq: 2, writer: "Ryan", message: "Router Practice" },
-    { seq: 3, writer: "Tom", message: "Practice Hard" },
-  ];
+  const { messages, setMessages } = useContext(MessageContext);
 
   const result = messages.map((e) => {
     return <tr key={e.seq}>
@@ -127,7 +160,7 @@ const Sub = () => {
         <tbody>
           <tr>
             <td colSpan={3} width={200} height={200}>
-                <Outlet></Outlet>
+              <Outlet></Outlet>
             </td>
           </tr>
         </tbody>
@@ -166,21 +199,28 @@ function App() {
   // - location.href , a 도 여전히 활용 가능하나 추천되지 않는 방식 ( 서버에 불필요한 리퀘스트 전송 )
   // - React에서는 일반적으로 react-router-dom 라이브러리를 활용하여 전환한다.
 
+  const [messages, setMessages] = useState([
+    { seq: 1, writer: "Jane", message: "React Router" },
+    { seq: 2, writer: "Ryan", message: "Router Practice" },
+    { seq: 3, writer: "Tom", message: "Practice Hard" },
+  ]);
 
   return (
-    <BrowserRouter>
-      <Index></Index>
-      <Routes>
-        <Route path='/Input' element={<Input />} />
-        <Route path='/Output' element={<Output />} />
-        <Route path='/sub/*' element={<Sub />} >
-          <Route path='red' element={<Red />} />
-          <Route path='green' element={<Green />} />
-          <Route path='blue' element={<Blue />} />
-        </Route>
-        <Route path='*' element={<index />} />
-      </Routes>
-    </BrowserRouter>
+    <MessageContext.Provider value={{ messages, setMessages }}>
+      <BrowserRouter basename='/react'>
+        <Index></Index>
+        <Routes>
+          <Route path='/input' element={<Input />} />
+          <Route path='/output' element={<Output />} />
+          <Route path='/sub/*' element={<Sub />} >
+            <Route path='red' element={<Red />} />
+            <Route path='green' element={<Green />} />
+            <Route path='blue' element={<Blue />} />
+          </Route>
+          {/* <Route path='*' element={<index />} /> */}
+        </Routes>
+      </BrowserRouter>
+    </MessageContext.Provider>
   );
 }
 
